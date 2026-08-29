@@ -1,0 +1,16 @@
+{
+  "name": "Craft And Building",
+  "short_name": "Craft And Building",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#87ceeb",
+  "theme_color": "#87ceeb",
+  "icons": [
+    {
+      "src": "./kazma.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
