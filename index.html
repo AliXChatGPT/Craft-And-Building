@@ -1,0 +1,2289 @@
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,
+  initial-scale=1,
+  maximum-scale=1,
+  user-scalable=no"
+>
+
+<title>Craft And Building</title>
+
+<link
+  rel="manifest"
+  href="./manifest.json"
+>
+
+<meta
+  name="theme-color"
+  content="#87ceeb"
+>
+
+<style>
+
+/* =====================================================
+   TEMEL
+===================================================== */
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#87ceeb;
+  font-family:Arial,sans-serif;
+}
+
+canvas{
+  display:block;
+}
+
+
+/* =====================================================
+   OYUN ALANI
+===================================================== */
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
+
+/* =====================================================
+   YÜKLEME EKRANI
+===================================================== */
+
+#loading{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:#111;
+  color:white;
+}
+
+#loading h1{
+  margin:0 0 20px;
+  font-size:30px;
+}
+
+#loadingText{
+  margin-bottom:15px;
+  opacity:.8;
+}
+
+#loadingBar{
+  width:320px;
+  max-width:80vw;
+  height:16px;
+  overflow:hidden;
+  border-radius:10px;
+  background:#333;
+}
+
+#bar{
+  width:0%;
+  height:100%;
+  background:#65c466;
+  transition:width .2s;
+}
+
+.hidden{
+  display:none!important;
+}
+
+
+/* =====================================================
+   HUD
+===================================================== */
+
+#hud{
+  position:fixed;
+  left:12px;
+  top:12px;
+  z-index:50;
+  padding:10px 13px;
+  border-radius:10px;
+  background:rgba(0,0,0,.6);
+  color:white;
+  font-size:13px;
+  line-height:1.6;
+  user-select:none;
+  pointer-events:none;
+}
+
+
+/* =====================================================
+   NİŞANGÂH
+===================================================== */
+
+#crosshair{
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:20px;
+  height:20px;
+  transform:translate(-50%,-50%);
+  z-index:40;
+  pointer-events:none;
+}
+
+#crosshair::before{
+  content:"";
+  position:absolute;
+  left:9px;
+  top:0;
+  width:2px;
+  height:20px;
+  background:white;
+}
+
+#crosshair::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:9px;
+  width:20px;
+  height:2px;
+  background:white;
+}
+
+
+/* =====================================================
+   MESAJ
+===================================================== */
+
+#message{
+  position:fixed;
+  left:50%;
+  top:15%;
+  transform:translateX(-50%);
+  z-index:100;
+  padding:10px 18px;
+  border-radius:10px;
+  background:rgba(0,0,0,.75);
+  color:white;
+  display:none;
+}
+
+#message.show{
+  display:block;
+}
+
+
+/* =====================================================
+   PANEL
+===================================================== */
+
+.panel{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:440px;
+  max-width:92vw;
+  max-height:85vh;
+  overflow:auto;
+  padding:20px;
+  z-index:200;
+  border:2px solid #777;
+  border-radius:15px;
+  background:rgba(20,20,20,.97);
+  color:white;
+  display:none;
+}
+
+.panel.open{
+  display:block;
+}
+
+
+/* =====================================================
+   ENVANTER
+===================================================== */
+
+.inventoryGrid{
+  display:grid;
+  grid-template-columns:
+    repeat(5,1fr);
+  gap:7px;
+}
+
+.slot{
+  min-height:62px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  white-space:pre-line;
+  border:2px solid #555;
+  border-radius:8px;
+  background:#292929;
+  cursor:pointer;
+  user-select:none;
+}
+
+.slot:hover{
+  background:#3d3d3d;
+}
+
+.slot.selected{
+  border-color:white;
+  background:#505050;
+}
+
+
+/* =====================================================
+   MOBİL
+===================================================== */
+
+#mobileControls{
+  display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- ===================================================
+     YÜKLEME
+=================================================== -->
+
+<div id="loading">
+
+  <h1>Craft And Building</h1>
+
+  <div id="loadingText">
+    Dünya hazırlanıyor...
+  </div>
+
+  <div id="loadingBar">
+
+    <div id="bar"></div>
+
+  </div>
+
+</div>
+
+
+<!-- ===================================================
+     OYUN
+=================================================== -->
+
+<div id="game"></div>
+
+
+<!-- ===================================================
+     HUD
+=================================================== -->
+
+<div id="hud">
+
+  <b>CRAFT AND BUILDING</b><br>
+
+  WASD → Hareket<br>
+
+  Shift → Koş<br>
+
+  C → Eğil<br>
+
+  Space → Zıpla<br>
+
+  X → Envanter<br>
+
+  Q → Hareket / Emote<br>
+
+  T → Eşya at<br>
+
+  E → Çalışma masası<br>
+
+  Sol tık → Kır<br>
+
+  Sağ tık → Koy
+
+</div>
+
+
+<!-- ===================================================
+     NİŞANGÂH
+=================================================== -->
+
+<div id="crosshair"></div>
+
+
+<!-- ===================================================
+     MESAJ
+=================================================== -->
+
+<div id="message"></div>
+
+
+<!-- ===================================================
+     ENVANTER
+=================================================== -->
+
+<div
+  id="inventory"
+  class="panel"
+>
+
+  <h2>🎒 Envanter</h2>
+
+  <div
+    id="inventoryGrid"
+    class="inventoryGrid"
+  ></div>
+
+</div>
+
+
+<!-- ===================================================
+     THREE.JS
+=================================================== -->
+
+<script
+  src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"
+></script>
+
+
+<script>
+
+/* =====================================================
+   YARDIMCI
+===================================================== */
+
+function $(id){
+
+  return document.getElementById(id);
+
+}
+
+
+/* =====================================================
+   OYUN DEĞİŞKENLERİ
+===================================================== */
+
+let scene;
+
+let camera;
+
+let renderer;
+
+let clock;
+
+let worldReady=false;
+
+let pointerLocked=false;
+
+
+/* =====================================================
+   DÜNYA
+===================================================== */
+
+const WORLD_SIZE=64;
+
+const WORLD_HEIGHT=32;
+
+const world=new Map();
+
+const blockMeshes=[];
+
+const blockMap=new Map();
+
+
+/* =====================================================
+   OYUNCU
+===================================================== */
+
+const player={
+
+  x:32,
+
+  y:10,
+
+  z:32,
+
+  vx:0,
+
+  vy:0,
+
+  vz:0,
+
+  width:.55,
+
+  height:1.8,
+
+  speed:4,
+
+  runSpeed:7,
+
+  jump:7,
+
+  grounded:false,
+
+  crouching:false,
+
+  swimming:false
+
+};
+
+
+/* =====================================================
+   KAMERA
+===================================================== */
+
+let yaw=0;
+
+let pitch=0;
+
+
+/* =====================================================
+   KLAVYE
+===================================================== */
+
+const keys={};
+
+
+/* =====================================================
+   ENVANTER
+===================================================== */
+
+const inventory={
+
+  open:false,
+
+  selected:"stone",
+
+  items:{
+
+    grass:32,
+
+    dirt:64,
+
+    stone:64,
+
+    wood:32,
+
+    sand:32,
+
+    gravel:32,
+
+    brick:32,
+
+    glass:16,
+
+    torch:16,
+
+    bed:1,
+
+    crafting_table:1,
+
+    furnace:1
+
+  }
+
+};
+
+
+/* =====================================================
+   BLOK TANIMLARI
+===================================================== */
+
+const BLOCKS={};
+
+
+/* =====================================================
+   BLOK EKLE
+===================================================== */
+
+function defineBlock(
+  id,
+  name,
+  colors,
+  options={}
+){
+
+  BLOCKS[id]={
+
+    id:id,
+
+    name:name,
+
+    colors:colors,
+
+    gravity:!!options.gravity,
+
+    transparent:!!options.transparent
+
+  };
+
+}
+
+
+/* =====================================================
+   BLOKLAR
+===================================================== */
+
+defineBlock(
+  "grass",
+  "Çim",
+  {
+    top:0x5cae3b,
+    bottom:0x79502c,
+    front:0x6e9d3b,
+    back:0x639238,
+    left:0x759f42,
+    right:0x67963b
+  }
+);
+
+
+defineBlock(
+  "dirt",
+  "Toprak",
+  {
+    top:0x80532f,
+    bottom:0x6b4326,
+    front:0x77502f,
+    back:0x71492b,
+    left:0x815631,
+    right:0x764a2b
+  }
+);
+
+
+defineBlock(
+  "stone",
+  "Taş",
+  {
+    top:0x898989,
+    bottom:0x646464,
+    front:0x7b7b7b,
+    back:0x737373,
+    left:0x858585,
+    right:0x707070
+  }
+);
+
+
+defineBlock(
+  "wood",
+  "Odun",
+  {
+    top:0xb17a45,
+    bottom:0x7d4e29,
+    front:0x87562d,
+    back:0x794821,
+    left:0x955e30,
+    right:0x71431f
+  }
+);
+
+
+defineBlock(
+  "sand",
+  "Kum",
+  {
+    top:0xe0ca7e,
+    bottom:0xc0aa5e,
+    front:0xd5bd70,
+    back:0xd0b66a,
+    left:0xe1ca7c,
+    right:0xcdb46a
+  },
+  {
+    gravity:true
+  }
+);
+
+
+defineBlock(
+  "gravel",
+  "Çakıl",
+  {
+    top:0x929292,
+    bottom:0x5f5f5f,
+    front:0x818181,
+    back:0x777777,
+    left:0x888888,
+    right:0x707070
+  },
+  {
+    gravity:true
+  }
+);
+
+
+defineBlock(
+  "brick",
+  "Tuğla",
+  {
+    top:0xa0523b,
+    bottom:0x713526,
+    front:0x93452f,
+    back:0x853d2b,
+    left:0x9c4b33,
+    right:0x7d3929
+  }
+);
+
+
+defineBlock(
+  "glass",
+  "Cam",
+  {
+    top:0xbdefff,
+    bottom:0xa5dce9,
+    front:0x9edce9,
+    back:0x9dd9e7,
+    left:0xb2e9f4,
+    right:0x9fdce9
+  },
+  {
+    transparent:true
+  }
+);
+
+
+defineBlock(
+  "torch",
+  "Meşale",
+  {
+    top:0xffb52e,
+    bottom:0x75471f,
+    front:0xff8f13,
+    back:0xffa11b,
+    left:0xff7c00,
+    right:0xffa51c
+  }
+);
+
+
+defineBlock(
+  "bed",
+  "Yatak",
+  {
+    top:0xd74646,
+    bottom:0x684128,
+    front:0xc83939,
+    back:0xb93131,
+    left:0xe05151,
+    right:0xb73535
+  }
+);
+
+
+defineBlock(
+  "crafting_table",
+  "Çalışma Masası",
+  {
+    top:0xb67a42,
+    bottom:0x633916,
+    front:0x8c5026,
+    back:0x7b451f,
+    left:0x995b2d,
+    right:0x713d1c
+  }
+);
+
+
+defineBlock(
+  "furnace",
+  "Fırın",
+  {
+    top:0x777777,
+    bottom:0x454545,
+    front:0x5c5c5c,
+    back:0x505050,
+    left:0x686868,
+    right:0x555555
+  }
+);
+
+
+defineBlock(
+  "castle",
+  "Kale Taşı",
+  {
+    top:0x888888,
+    bottom:0x555555,
+    front:0x777777,
+    back:0x696969,
+    left:0x818181,
+    right:0x626262
+  }
+);
+
+
+/* =====================================================
+   BLOK ANAHTARI
+===================================================== */
+
+function blockKey(
+  x,
+  y,
+  z
+){
+
+  return (
+    x+
+    ","+
+    y+
+    ","+
+    z
+  );
+
+}
+
+
+/* =====================================================
+   BLOK GETİR
+===================================================== */
+
+function getBlock(
+  x,
+  y,
+  z
+){
+
+  return world.get(
+    blockKey(x,y,z)
+  ) || "air";
+
+}
+
+
+/* =====================================================
+   BLOK AYARLA
+===================================================== */
+
+function setBlock(
+  x,
+  y,
+  z,
+  type
+){
+
+  if(
+    x<0||
+    z<0||
+    y<0||
+    x>=WORLD_SIZE||
+    z>=WORLD_SIZE||
+    y>=WORLD_HEIGHT
+  ){
+
+    return;
+
+  }
+
+  const key=
+    blockKey(x,y,z);
+
+  world.set(
+    key,
+    type
+  );
+
+}
+
+
+/* =====================================================
+   MATERYAL
+===================================================== */
+
+function makeMaterial(
+  color,
+  transparent
+){
+
+  return new THREE.MeshLambertMaterial({
+
+    color:color,
+
+    transparent:!!transparent,
+
+    opacity:
+      transparent
+      ? .55
+      : 1
+
+  });
+
+}
+
+
+/* =====================================================
+   BLOK MESH
+===================================================== */
+
+function createBlockMesh(
+  x,
+  y,
+  z,
+  type
+){
+
+  const data=
+    BLOCKS[type];
+
+  if(!data){
+
+    return null;
+
+  }
+
+
+  const c=
+    data.colors;
+
+
+  const materials=[
+
+    makeMaterial(
+      c.right,
+      data.transparent
+    ),
+
+    makeMaterial(
+      c.left,
+      data.transparent
+    ),
+
+    makeMaterial(
+      c.top,
+      data.transparent
+    ),
+
+    makeMaterial(
+      c.bottom,
+      data.transparent
+    ),
+
+    makeMaterial(
+      c.front,
+      data.transparent
+    ),
+
+    makeMaterial(
+      c.back,
+      data.transparent
+    )
+
+  ];
+
+
+  const mesh=
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        1,
+        1,
+        1
+      ),
+
+      materials
+
+    );
+
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  );
+
+
+  mesh.userData={
+    x:x,
+    y:y,
+    z:z,
+    type:type
+  };
+
+
+  scene.add(mesh);
+
+
+  blockMeshes.push(mesh);
+
+
+  blockMap.set(
+    blockKey(x,y,z),
+    mesh
+  );
+
+
+  return mesh;
+
+}
+
+
+/* =====================================================
+   BLOK MESH SİL
+===================================================== */
+
+function removeBlockMesh(
+  x,
+  y,
+  z
+){
+
+  const key=
+    blockKey(x,y,z);
+
+  const mesh=
+    blockMap.get(key);
+
+  if(!mesh){
+
+    return;
+
+  }
+
+
+  scene.remove(mesh);
+
+
+  const index=
+    blockMeshes.indexOf(mesh);
+
+
+  if(index!==-1){
+
+    blockMeshes.splice(
+      index,
+      1
+    );
+
+  }
+
+
+  if(
+    Array.isArray(
+      mesh.material
+    )
+  ){
+
+    mesh.material.forEach(
+      material=>{
+        material.dispose();
+      }
+    );
+
+  }
+
+
+  mesh.geometry.dispose();
+
+
+  blockMap.delete(key);
+
+}
+
+
+/* =====================================================
+   DÜNYAYA BLOK KOY
+===================================================== */
+
+function buildBlock(
+  x,
+  y,
+  z,
+  type
+){
+
+  setBlock(
+    x,
+    y,
+    z,
+    type
+  );
+
+  createBlockMesh(
+    x,
+    y,
+    z,
+    type
+  );
+
+}
+
+
+/* =====================================================
+   ARAZİ YÜKSEKLİĞİ
+===================================================== */
+
+function terrainHeight(
+  x,
+  z
+){
+
+  const a=
+    Math.sin(x*.18)*2;
+
+  const b=
+    Math.cos(z*.21)*2;
+
+  const c=
+    Math.sin(
+      (x+z)*.08
+    )*2;
+
+  return Math.max(
+    2,
+    Math.floor(
+      6+a+b+c
+    )
+  );
+
+}
+
+
+/* =====================================================
+   DÜNYA OLUŞTUR
+===================================================== */
+
+function generateWorld(){
+
+  for(
+    let x=0;
+    x<WORLD_SIZE;
+    x++
+  ){
+
+    for(
+      let z=0;
+      z<WORLD_SIZE;
+      z++
+    ){
+
+      const height=
+        terrainHeight(
+          x,
+          z
+        );
+
+
+      for(
+        let y=0;
+        y<=height;
+        y++
+      ){
+
+        let type;
+
+
+        if(y===0){
+
+          type="stone";
+
+        }
+
+        else if(
+          y<height-3
+        ){
+
+          type="stone";
+
+        }
+
+        else if(
+          y<height
+        ){
+
+          type="dirt";
+
+        }
+
+        else{
+
+          type="grass";
+
+        }
+
+
+        buildBlock(
+          x,
+          y,
+          z,
+          type
+        );
+
+      }
+
+    }
+
+  }
+
+}
+
+
+/* =====================================================
+   OYUNCU POZİSYONU
+===================================================== */
+
+function updateCamera(){
+
+  camera.position.set(
+
+    player.x,
+
+    player.y+
+      (
+        player.crouching
+        ? .65
+        : 1
+      ),
+
+    player.z
+
+  );
+
+
+  camera.rotation.order=
+    "YXZ";
+
+
+  camera.rotation.y=
+    yaw;
+
+
+  camera.rotation.x=
+    pitch;
+
+}
+
+
+/* =====================================================
+   HAREKET
+===================================================== */
+
+function updatePlayer(
+  delta
+){
+
+  let speed=
+    player.running
+    ? player.runSpeed
+    : player.speed;
+
+
+  if(
+    player.crouching
+  ){
+
+    speed*=.5;
+
+  }
+
+
+  if(
+    player.swimming
+  ){
+
+    speed*=.65;
+
+  }
+
+
+  let forward=0;
+
+  let strafe=0;
+
+
+  if(keys.KeyW){
+
+    forward+=1;
+
+  }
+
+
+  if(keys.KeyS){
+
+    forward-=1;
+
+  }
+
+
+  if(keys.KeyA){
+
+    strafe-=1;
+
+  }
+
+
+  if(keys.KeyD){
+
+    strafe+=1;
+
+  }
+
+
+  const length=
+    Math.hypot(
+      forward,
+      strafe
+    );
+
+
+  if(length>0){
+
+    forward/=length;
+
+    strafe/=length;
+
+  }
+
+
+  const sin=
+    Math.sin(yaw);
+
+  const cos=
+    Math.cos(yaw);
+
+
+  player.vx=
+    (
+      strafe*cos+
+      forward*sin
+    )*
+    speed;
+
+
+  player.vz=
+    (
+      strafe*-sin+
+      forward*cos
+    )*
+    speed;
+
+
+  player.vy-=
+    20*delta;
+
+
+  if(
+    keys.Space &&
+    player.grounded
+  ){
+
+    player.vy=
+      player.jump;
+
+    player.grounded=
+      false;
+
+  }
+
+
+  player.x+=
+    player.vx*
+    delta;
+
+
+  player.z+=
+    player.vz*
+    delta;
+
+
+  player.y+=
+    player.vy*
+    delta;
+
+
+  if(
+    player.y<7
+  ){
+
+    player.y=7;
+
+    player.vy=0;
+
+    player.grounded=
+      true;
+
+  }
+
+
+  player.x=
+    Math.max(
+      1,
+      Math.min(
+        WORLD_SIZE-2,
+        player.x
+      )
+    );
+
+
+  player.z=
+    Math.max(
+      1,
+      Math.min(
+        WORLD_SIZE-2,
+        player.z
+      )
+    );
+
+}
+
+
+/* =====================================================
+   KLAVYE
+===================================================== */
+
+window.addEventListener(
+  "keydown",
+  event=>{
+
+    keys[event.code]=true;
+
+
+    if(
+      event.code==="KeyC"
+    ){
+
+      player.crouching=
+        true;
+
+    }
+
+
+    if(
+      event.code==="ShiftLeft"||
+      event.code==="ShiftRight"
+    ){
+
+      player.running=
+        true;
+
+    }
+
+
+    if(
+      event.code==="KeyX" &&
+      !event.repeat
+    ){
+
+      toggleInventory();
+
+    }
+
+
+    if(
+      event.code==="KeyQ" &&
+      !event.repeat
+    ){
+
+      showMessage(
+        "👏 Emote!"
+      );
+
+    }
+
+
+    if(
+      event.code==="KeyT" &&
+      !event.repeat
+    ){
+
+      dropSelectedItem();
+
+    }
+
+  }
+);
+
+
+window.addEventListener(
+  "keyup",
+  event=>{
+
+    keys[event.code]=
+      false;
+
+
+    if(
+      event.code==="KeyC"
+    ){
+
+      player.crouching=
+        false;
+
+    }
+
+
+    if(
+      event.code==="ShiftLeft"||
+      event.code==="ShiftRight"
+    ){
+
+      player.running=
+        false;
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   ENVANTERİ GÖSTER
+===================================================== */
+
+function renderInventory(){
+
+  const grid=
+    $("inventoryGrid");
+
+
+  grid.innerHTML="";
+
+
+  Object.keys(
+    inventory.items
+  ).forEach(
+    type=>{
+
+      const slot=
+        document.createElement(
+          "div"
+        );
+
+
+      slot.className=
+        "slot";
+
+
+      if(
+        type===
+        inventory.selected
+      ){
+
+        slot.classList.add(
+          "selected"
+        );
+
+      }
+
+
+      slot.textContent=
+        (
+          BLOCKS[type]
+          ?.name ||
+          type
+        )+
+        "\n×"+
+        inventory.items[type];
+
+
+      slot.addEventListener(
+        "click",
+        ()=>{
+
+          inventory.selected=
+            type;
+
+          renderInventory();
+
+        }
+      );
+
+
+      grid.appendChild(
+        slot
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   ENVANTER AÇ/KAPAT
+===================================================== */
+
+function toggleInventory(){
+
+  inventory.open=
+    !inventory.open;
+
+
+  $("inventory")
+    .classList.toggle(
+      "open",
+      inventory.open
+    );
+
+
+  renderInventory();
+
+
+  if(
+    inventory.open &&
+    document.pointerLockElement
+  ){
+
+    document.exitPointerLock();
+
+  }
+
+}
+
+
+/* =====================================================
+   EŞYA AT
+===================================================== */
+
+function dropSelectedItem(){
+
+  const type=
+    inventory.selected;
+
+
+  if(
+    !inventory.items[type]||
+    inventory.items[type]<=0
+  ){
+
+    showMessage(
+      "Eşya yok!"
+    );
+
+    return;
+
+  }
+
+
+  inventory.items[type]--;
+
+  renderInventory();
+
+
+  showMessage(
+    BLOCKS[type].name+
+    " atıldı!"
+  );
+
+}
+
+
+/* =====================================================
+   MESAJ
+===================================================== */
+
+let messageTimer=null;
+
+
+function showMessage(
+  text
+){
+
+  const box=
+    $("message");
+
+
+  box.textContent=
+    text;
+
+
+  box.classList.add(
+    "show"
+  );
+
+
+  clearTimeout(
+    messageTimer
+  );
+
+
+  messageTimer=
+    setTimeout(
+      ()=>{
+
+        box.classList.remove(
+          "show"
+        );
+
+      },
+      1300
+    );
+
+}
+
+
+/* =====================================================
+   MOUSE
+===================================================== */
+
+document.addEventListener(
+  "mousemove",
+  event=>{
+
+    if(!pointerLocked){
+
+      return;
+
+    }
+
+
+    yaw-=
+      event.movementX*
+      .0025;
+
+
+    pitch-=
+      event.movementY*
+      .0025;
+
+
+    pitch=
+      Math.max(
+        -1.4,
+        Math.min(
+          1.4,
+          pitch
+        )
+      );
+
+  }
+);
+
+
+document.addEventListener(
+  "pointerlockchange",
+  ()=>{
+
+    pointerLocked=
+      document.pointerLockElement===
+      renderer.domElement;
+
+  }
+);
+
+
+rendererClick();
+
+
+function rendererClick(){
+
+  document.addEventListener(
+    "click",
+    ()=>{
+
+      if(
+        !inventory.open
+      ){
+
+        renderer.domElement
+          .requestPointerLock();
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   RAYCAST
+===================================================== */
+
+const raycaster=
+  new THREE.Raycaster();
+
+
+const center=
+  new THREE.Vector2(
+    0,
+    0
+  );
+
+
+function getTarget(){
+
+  raycaster.setFromCamera(
+    center,
+    camera
+  );
+
+
+  const hits=
+    raycaster.intersectObjects(
+      blockMeshes,
+      false
+    );
+
+
+  if(!hits.length){
+
+    return null;
+
+  }
+
+
+  return hits[0];
+
+}
+
+
+/* =====================================================
+   BLOK KIR
+===================================================== */
+
+function breakTarget(){
+
+  const hit=
+    getTarget();
+
+
+  if(!hit){
+
+    return;
+
+  }
+
+
+  const mesh=
+    hit.object;
+
+
+  const data=
+    mesh.userData;
+
+
+  const type=
+    getBlock(
+      data.x,
+      data.y,
+      data.z
+    );
+
+
+  if(
+    type==="stone" &&
+    data.y===0
+  ){
+
+    return;
+
+  }
+
+
+  removeBlockMesh(
+    data.x,
+    data.y,
+    data.z
+  );
+
+
+  setBlock(
+    data.x,
+    data.y,
+    data.z,
+    "air"
+  );
+
+
+  if(
+    BLOCKS[type]
+  ){
+
+    if(
+      inventory.items[type]===
+      undefined
+    ){
+
+      inventory.items[type]=0;
+
+    }
+
+
+    inventory.items[type]++;
+
+    renderInventory();
+
+  }
+
+
+  showMessage(
+    BLOCKS[type]?.name+
+    " kırıldı"
+  );
+
+}
+
+
+/* =====================================================
+   BLOK KOY
+===================================================== */
+
+function placeSelected(){
+
+  const hit=
+    getTarget();
+
+
+  if(!hit){
+
+    return;
+
+  }
+
+
+  const type=
+    inventory.selected;
+
+
+  if(
+    !BLOCKS[type]||
+    inventory.items[type]<=0
+  ){
+
+    return;
+
+  }
+
+
+  const normal=
+    hit.face.normal.clone();
+
+
+  const position=
+    hit.object.position.clone();
+
+
+  position.add(
+    normal
+  );
+
+
+  const x=
+    Math.round(
+      position.x
+    );
+
+
+  const y=
+    Math.round(
+      position.y
+    );
+
+
+  const z=
+    Math.round(
+      position.z
+    );
+
+
+  if(
+    getBlock(x,y,z)!==
+    "air"
+  ){
+
+    return;
+
+  }
+
+
+  if(
+    y<1||
+    y>=WORLD_HEIGHT
+  ){
+
+    return;
+
+  }
+
+
+  buildBlock(
+    x,
+    y,
+    z,
+    type
+  );
+
+
+  inventory.items[type]--;
+
+  renderInventory();
+
+}
+
+
+/* =====================================================
+   MOUSE TIKLARI
+===================================================== */
+
+rendererMouse();
+
+
+function rendererMouse(){
+
+  document.addEventListener(
+    "mousedown",
+    event=>{
+
+      if(
+        !pointerLocked
+      ){
+
+        return;
+
+      }
+
+
+      if(
+        event.button===0
+      ){
+
+        breakTarget();
+
+      }
+
+
+      if(
+        event.button===2
+      ){
+
+        placeSelected();
+
+      }
+
+    }
+  );
+
+
+  document.addEventListener(
+    "contextmenu",
+    event=>{
+      event.preventDefault();
+    }
+  );
+
+}
+
+
+/* =====================================================
+   THREE BAŞLAT
+===================================================== */
+
+function init(){
+
+  scene=
+    new THREE.Scene();
+
+
+  scene.background=
+    new THREE.Color(
+      0x87ceeb
+    );
+
+
+  camera=
+    new THREE.PerspectiveCamera(
+      75,
+      innerWidth/
+      innerHeight,
+      .05,
+      500
+    );
+
+
+  renderer=
+    new THREE.WebGLRenderer({
+
+      antialias:true,
+
+      powerPreference:
+        "high-performance"
+
+    });
+
+
+  renderer.setPixelRatio(
+    Math.min(
+      devicePixelRatio||1,
+      2
+    )
+  );
+
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+
+
+  renderer.outputColorSpace=
+    THREE.SRGBColorSpace;
+
+
+  $("game")
+    .appendChild(
+      renderer.domElement
+    );
+
+
+  clock=
+    new THREE.Clock();
+
+
+  const ambient=
+    new THREE.HemisphereLight(
+      0xffffff,
+      0x555555,
+      1.8
+    );
+
+
+  scene.add(
+    ambient
+  );
+
+
+  const sun=
+    new THREE.DirectionalLight(
+      0xffffff,
+      2
+    );
+
+
+  sun.position.set(
+    40,
+    60,
+    30
+  );
+
+
+  scene.add(
+    sun
+  );
+
+
+  generateWorld();
+
+
+  worldReady=true;
+
+
+  renderInventory();
+
+}
+
+
+/* =====================================================
+   BOOT
+===================================================== */
+
+async function boot(){
+
+  try{
+
+    $("bar").style.width=
+      "10%";
+
+
+    $("loadingText").textContent=
+      "3D motoru hazırlanıyor...";
+
+
+    await new Promise(
+      resolve=>
+        setTimeout(
+          resolve,
+          100
+        )
+    );
+
+
+    $("bar").style.width=
+      "35%";
+
+
+    $("loadingText").textContent=
+      "Dünya oluşturuluyor...";
+
+
+    init();
+
+
+    $("bar").style.width=
+      "75%";
+
+
+    $("loadingText").textContent=
+      "Oyuncu hazırlanıyor...";
+
+
+    await new Promise(
+      resolve=>
+        setTimeout(
+          resolve,
+          150
+        )
+    );
+
+
+    $("bar").style.width=
+      "100%";
+
+
+    $("loadingText").textContent=
+      "Hazır!";
+
+
+    await new Promise(
+      resolve=>
+        setTimeout(
+          resolve,
+          250
+        )
+    );
+
+
+    $("loading")
+      .classList.add(
+        "hidden"
+      );
+
+
+    showMessage(
+      "🌍 Craft And Building hazır!"
+    );
+
+
+  }
+  catch(error){
+
+    console.error(
+      error
+    );
+
+
+    $("loading").innerHTML=
+
+      "<h2>Oyun başlatılamadı.</h2>"+
+      "<p>"+
+      error.message+
+      "</p>";
+
+  }
+
+}
+
+
+/* =====================================================
+   OYUN DÖNGÜSÜ
+===================================================== */
+
+let lastTime=
+  performance.now();
+
+
+function animate(){
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  const now=
+    performance.now();
+
+
+  const delta=
+    Math.min(
+      (now-lastTime)/1000,
+      .05
+    );
+
+
+  lastTime=
+    now;
+
+
+  if(worldReady){
+
+    updatePlayer(
+      delta
+    );
+
+
+    updateCamera();
+
+  }
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+
+}
+
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+window.addEventListener(
+  "resize",
+  ()=>{
+
+    if(!camera){
+
+      return;
+
+    }
+
+
+    camera.aspect=
+      innerWidth/
+      innerHeight;
+
+
+    camera.updateProjectionMatrix();
+
+
+    renderer.setSize(
+      innerWidth,
+      innerHeight
+    );
+
+  }
+);
+
+
+/* =====================================================
+   BAŞLAT
+===================================================== */
+
+boot();
+
+animate();
+
+</script>
+
+</body>
+</html>
+```
